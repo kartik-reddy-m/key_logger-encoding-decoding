@@ -1,0 +1,11 @@
+# Never commit captured data or the encryption key
+logs/
+*.log
+*.log.*
+secret.key
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
