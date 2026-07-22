@@ -4,6 +4,12 @@ A Python keylogger built for a cyber-security internship assignment. Its purpose
 is to **demonstrate how keystroke capture works so it can be detected and
 defended against** — not to provide covert spyware.
 
+It ships in three forms: a **command-line tool** (`keylogger.py`), a **desktop GUI
+application** (`gui.py`), and a safe, in-browser **live web demo**.
+
+> 🔗 **Live demo:** https://kartik-reddy-m.github.io/key_logger-encoding-decoding/
+> &nbsp;·&nbsp; 🖥️ **Desktop app:** `python gui.py`
+
 > ⚠️ **Legal & ethical notice.** Only run this on a machine you own or are
 > explicitly authorized to test. Recording another person's keystrokes without
 > informed consent is illegal in most jurisdictions (wiretapping / computer-misuse
@@ -34,6 +40,11 @@ understand both the mechanism *and* the ethics.
 - **At-rest encryption:** `--encrypt` stores the log as Fernet tokens; decrypt
   later with `decrypt_log.py`.
 - **Consent gate:** must type `I AGREE` (or pass `--i-consent`) to start.
+- **Desktop GUI (`gui.py`):** a customtkinter app with Start/Stop, a live keystroke
+  counter, a real-time capture preview, encrypt/decrypt controls, and quick access
+  to the log file — the same engine, wrapped in a visible window.
+- **Web demo (`index.html`):** a client-side, in-browser illustration of keystroke
+  logging (nothing is stored or sent anywhere) — deployed via GitHub Pages.
 
 ---
 
@@ -59,6 +70,14 @@ pip install -r requirements.txt
 ---
 
 ## Usage
+
+**Desktop GUI application:**
+
+```bash
+python gui.py                       # launch the windowed app
+```
+
+**Command-line tool:**
 
 ```bash
 python keylogger.py                 # plaintext log, interactive consent
@@ -107,7 +126,9 @@ defense** analysis.
 
 | File | Purpose |
 | --- | --- |
-| `keylogger.py` | The keylogger (capture, window tracking, rotation, encryption) |
+| `keylogger.py` | The keylogger core (capture, window tracking, rotation, encryption) |
+| `gui.py` | Desktop GUI application (customtkinter) |
+| `index.html` | Client-side web demo (GitHub Pages) |
 | `decrypt_log.py` | Utility to decrypt an encrypted log |
 | `requirements.txt` | Python dependencies |
 | `REPORT.md` | Architecture + detection & defense report (the graded write-up) |
