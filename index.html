@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Keylogger — Interactive Web Demo (Educational) | NGS-CS26-KM23</title>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --panel2:#1c2430; --line:#2a3340;
+    --fg:#e6edf3; --muted:#8b949e; --green:#2e9e4f; --red:#d64545;
+    --amber:#e2a93c; --blue:#2f81f7; --cyan:#56b6c2;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--fg);
+    font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.5;padding:24px 16px;}
+  .wrap{max-width:900px;margin:0 auto;}
+  header h1{font-size:28px;display:flex;align-items:center;gap:10px}
+  header p{color:var(--muted);font-size:14px;margin-top:2px}
+  .banner{background:#2b2410;border:1px solid #4a3d16;border-radius:8px;
+    padding:12px 14px;margin:16px 0;color:var(--amber);font-size:13.5px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;
+    padding:16px;margin:14px 0}
+  .row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+  .spacer{flex:1}
+  button{font:inherit;font-weight:600;border:none;border-radius:8px;
+    padding:10px 18px;cursor:pointer;color:#fff}
+  #start{background:var(--green)} #stop{background:var(--red)}
+  #clear{background:#5c3030} .ghost{background:var(--panel2);color:var(--fg);
+    border:1px solid var(--line)}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  label.chk{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:14px}
+  textarea{width:100%;min-height:110px;background:var(--panel2);color:var(--fg);
+    border:1px solid var(--line);border-radius:8px;padding:12px;
+    font-family:Consolas,'Courier New',monospace;font-size:15px;resize:vertical}
+  .status{display:flex;flex-wrap:wrap;gap:18px;align-items:center;
+    font-size:14px;margin:10px 0}
+  .dot{font-weight:700;color:var(--muted)} .dot.rec{color:var(--red)}
+  .meta{color:var(--muted)}
+  h2{font-size:15px;margin-bottom:8px;color:var(--fg)}
+  #log{background:#010409;border:1px solid var(--line);border-radius:8px;
+    padding:12px;height:230px;overflow:auto;white-space:pre-wrap;word-break:break-word;
+    font-family:Consolas,'Courier New',monospace;font-size:13.5px;color:#c9d1d9}
+  .tok{color:var(--cyan)} .win{color:var(--muted)}
+  footer{color:var(--muted);font-size:12px;text-align:center;margin-top:22px}
+  a{color:var(--blue)}
+  .note{color:var(--muted);font-size:12.5px;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🔐 Keylogger <span style="font-size:15px;color:var(--muted);font-weight:400">— Interactive Web Demo</span></h1>
+    <p>Keystroke Monitoring Tool · runs VISIBLY · everything stays in YOUR browser · educational use only</p>
+  </header>
+
+  <div class="banner">
+    ⚠ <b>Educational demonstration only.</b> This page shows how keystroke logging works.
+    It captures keys <b>only while this page is focused</b>, keeps everything <b>in your own
+    browser</b>, and <b>sends nothing anywhere</b> — no server, no storage, no network.
+    Recording another person's keystrokes without consent is illegal.
+  </div>
+
+  <div class="card">
+    <div class="row">
+      <button id="start">▶ Start Capture</button>
+      <button id="stop" disabled>■ Stop</button>
+      <button id="clear" class="ghost">Clear Log</button>
+      <div class="spacer"></div>
+      <label class="chk"><input type="checkbox" id="track" checked> Show focused field</label>
+    </div>
+    <div class="status">
+      <span id="statusDot" class="dot">● Idle</span>
+      <span class="meta">Keys captured: <b id="count">0</b></span>
+      <span class="meta" id="focus">Focus: —</span>
+    </div>
+    <textarea id="typing" placeholder="Click 'Start Capture', then type here (or anywhere on this page) to see how a keylogger records keystrokes…"></textarea>
+    <p class="note">Tip: printable keys are logged as characters; special keys appear as
+      tokens like <span class="tok">[enter]</span>, <span class="tok">[shift]</span>,
+      <span class="tok">[backspace]</span>.</p>
+  </div>
+
+  <div class="card">
+    <h2>Live capture log</h2>
+    <div id="log"></div>
+  </div>
+
+  <footer>
+    NGS-CS26-KM23 · NXTGENSEC Cybersecurity Internship ·
+    <a href="https://github.com/kartik-reddy-m/key_logger-encoding-decoding" target="_blank" rel="noopener">Project source on GitHub</a>
+    <br>The full project also includes a Python command-line tool and a desktop GUI application.
+  </footer>
+</div>
+
+<script>
+(function(){
+  var capturing=false, count=0, lastFocus=null;
+  var startBtn=document.getElementById('start'),
+      stopBtn=document.getElementById('stop'),
+      clearBtn=document.getElementById('clear'),
+      logEl=document.getElementById('log'),
+      countEl=document.getElementById('count'),
+      dotEl=document.getElementById('statusDot'),
+      focusEl=document.getElementById('focus'),
+      trackEl=document.getElementById('track'),
+      typing=document.getElementById('typing');
+
+  function ts(){ return new Date().toLocaleTimeString(); }
+
+  function describeFocus(){
+    var el=document.activeElement;
+    if(!el||el===document.body) return 'page';
+    var tag=el.tagName.toLowerCase();
+    return tag+(el.id?('#'+el.id):'');
+  }
+
+  function append(html){ logEl.insertAdjacentHTML('beforeend', html); logEl.scrollTop=logEl.scrollHeight; }
+
+  var SPECIAL={'Enter':'[enter]\n','Tab':'[tab]','Backspace':'[backspace]',
+    'Shift':'[shift]','Control':'[ctrl]','Alt':'[alt]','Meta':'[meta]',
+    'CapsLock':'[capslock]','Escape':'[esc]','ArrowUp':'[up]','ArrowDown':'[down]',
+    'ArrowLeft':'[left]','ArrowRight':'[right]',' ':' '};
+
+  function onKey(e){
+    if(!capturing) return;
+    if(trackEl.checked){
+      var f=describeFocus();
+      if(f!==lastFocus){ lastFocus=f;
+        append('\n<span class="win">──[ '+ts()+'  focus: '+f+' ]──</span>\n'); }
+    }
+    var tok;
+    if(e.key.length===1){ tok=e.key; }
+    else if(SPECIAL.hasOwnProperty(e.key)){ tok=SPECIAL[e.key]; }
+    else { tok='['+e.key.toLowerCase()+']'; }
+    if(tok.charAt(0)==='['){ append('<span class="tok">'+tok+'</span>'); }
+    else { append(tok.replace(/</g,'&lt;').replace(/>/g,'&gt;')); }
+    count++; countEl.textContent=count;
+  }
+
+  function setState(on){
+    capturing=on;
+    startBtn.disabled=on; stopBtn.disabled=!on;
+    dotEl.textContent=on?'● Recording':'● Idle';
+    dotEl.className='dot'+(on?' rec':'');
+    if(on){ lastFocus=null; typing.focus(); }
+  }
+
+  startBtn.onclick=function(){
+    if(!confirm('This demo will record keys pressed while this page is focused, shown only here in your browser.\n\nContinue?')) return;
+    append('<span class="win">===== CAPTURE STARTED '+ts()+' =====</span>\n');
+    setState(true);
+  };
+  stopBtn.onclick=function(){
+    append('\n<span class="win">===== CAPTURE STOPPED '+ts()+' ('+count+' keys) =====</span>\n');
+    setState(false);
+  };
+  clearBtn.onclick=function(){ logEl.innerHTML=''; count=0; countEl.textContent='0'; };
+  document.addEventListener('keydown', onKey, true);
+  document.addEventListener('focusin', function(){ if(capturing&&trackEl.checked){} });
+})();
+</script>
+</body>
+</html>
